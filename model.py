@@ -14,6 +14,7 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+from transformers import AutoTokenizer
 
 
 class LayerNorm(nn.Module):
@@ -50,7 +51,7 @@ class CausalSelfAttention(nn.Module):
             self.register_buffer("bias", torch.tril(torch.ones(config.block_size, config.block_size))
                                         .view(1, 1, config.block_size, config.block_size))
 
-    def forward(self, x):
+    def forward(self, x, self_attention_mask=None):
         B, T, C = x.size() # batch size, sequence length, embedding dimensionality (n_embd)
 
         # calculate query, key, values for all heads in batch and move head forward to be the batch dim
@@ -62,11 +63,30 @@ class CausalSelfAttention(nn.Module):
         # causal self-attention; Self-attend: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
         if self.flash:
             # efficient attention using Flash Attention CUDA kernels
-            y = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=self.dropout if self.training else 0, is_causal=True)
+            combined_mask = torch.tril(torch.ones(T, T, device=x.device)).unsqueeze(0).unsqueeze(0).to(torch.bool)  # (1, 1, T, T)
+            if self_attention_mask is not None:
+                # padding_mask: (B, T) -> (B, 1, 1, T)
+                key_mask = self_attention_mask.unsqueeze(1).unsqueeze(2).to(torch.bool)  # (B, 1, 1, T)
+                combined_mask = combined_mask & key_mask
+                combined_mask = combined_mask.expand(B, self.n_head, T, T)  # (B, nh, T, T)
+            else:
+                combined_mask = combined_mask.expand(B, self.n_head, T, T)  # (B, nh, T, T)
+            y = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=combined_mask, dropout_p=self.dropout if self.training else 0, is_causal=False)
         else:
             # manual implementation of attention
             att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
-            att = att.masked_fill(self.bias[:,:,:T,:T] == 0, float('-inf'))
+            causal_mask = torch.tril(torch.ones(T, T, device=x.device)).unsqueeze(0).unsqueeze(0)  # (1, 1, T, T)
+
+            # Apply causal mask
+            att = att.masked_fill(causal_mask == 0, float('-inf'))
+
+            # Apply padding mask
+            if self_attention_mask is not None:
+                # padding_mask: (B, T) -> (B, 1, 1, T)
+                key_mask = self_attention_mask[:, None, None, :].to(torch.bool)
+                att = att.masked_fill(~key_mask, float('-inf'))
+            else:
+                att = att.masked_fill(self.bias[:,:,:T,:T] == 0, float('-inf'))
             att = F.softmax(att, dim=-1)
             att = self.attn_dropout(att)
             y = att @ v # (B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T, hs)
@@ -101,20 +121,22 @@ class Block(nn.Module):
         self.ln_2 = LayerNorm(config.n_embd, bias=config.bias)
         self.mlp = MLP(config)
 
-    def forward(self, x):
-        x = x + self.attn(self.ln_1(x))
+    def forward(self, x, self_attention_mask=None):
+        x = x + self.attn(self.ln_1(x), self_attention_mask)
         x = x + self.mlp(self.ln_2(x))
+
         return x
 
 @dataclass
 class GPTConfig:
-    block_size: int = 1024
+    block_size: int = 10
     vocab_size: int = 50304 # GPT-2 vocab_size of 50257, padded up to nearest multiple of 64 for efficiency
-    n_layer: int = 12
+    n_layer: int = 1
     n_head: int = 12
     n_embd: int = 768
     dropout: float = 0.0
     bias: bool = True # True: bias in Linears and LayerNorms, like GPT-2. False: a bit better and faster
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
     # TODO: add a tokenizer option
 
 class GPT(nn.Module):
@@ -169,7 +191,7 @@ class GPT(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, idx):
+    def forward(self, idx, self_attention_mask=None):
         device = idx.device
         b, t = idx.size()
         assert t <= self.config.block_size, f"Cannot forward sequence of length {t}, block size is only {self.config.block_size}"
@@ -180,7 +202,7 @@ class GPT(nn.Module):
         pos_emb = self.transformer.wpe(pos) # position embeddings of shape (t, n_embd)
         x = self.transformer.drop(tok_emb + pos_emb)
         for block in self.transformer.h:
-            x = block(x)
+            x = block(x, self_attention_mask)
         x = self.transformer.ln_f(x)
 
         logits = self.lm_head(x)
@@ -223,3 +245,4 @@ class GPT(nn.Module):
         extra_args = dict(fused=True) if use_fused else dict()
         optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=betas, **extra_args)
         print(f"using fused AdamW: {use_fused}")
+        return optimizer
