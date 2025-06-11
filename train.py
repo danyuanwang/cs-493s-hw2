@@ -96,7 +96,7 @@ def train(data, weight_decay, learning_rate, betas, model = None):
     test_losses = []
     train_accuracies = []
     test_accuracies = []
-    for epoch in range(100):
+    for epoch in range(1000):
         print(f"Epoch {epoch + 1}")
         train_loss = 0
         total = 0
