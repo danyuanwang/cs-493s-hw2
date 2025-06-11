@@ -57,4 +57,4 @@ def generate_data(p, data_size, splits = (0.8, 0.1, 0.1)):
     with open("val.txt", "w") as f:
         f.write(val_out)
 
-generate_data(97, 50, [0.8, 0.1, 0.1])
+generate_data(97, 100, [0.8, 0.1, 0.1])

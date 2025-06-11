@@ -21,7 +21,7 @@ def get_test_loss(data, model, config):
     with open(data, "r") as f:
         d = f.readline()
         while d != "":
-            
+            d = d.replace('\n', '')
             d_tokens = config.tokenizer(d).input_ids
             length = len(d_tokens)
             #pad = [config.pad_id] * (config.block_size - length)
@@ -29,16 +29,16 @@ def get_test_loss(data, model, config):
             if length < 3:
                 d = f.readline()
                 continue
-            '''''
+            '''
             x = d_tokens[:-1]
             y = d_tokens[1:]
-            print(f"X: {x} | Y: {y}")
+            #print(f"X: {x} | Y: {y}")
             x_tokens = torch.tensor(x, dtype = torch.long)
             y_tokens = torch.tensor(y, dtype = torch.long)
-            train_x.append(x_tokens)
-            train_y.append(y_tokens)
-            '''
+            X.append(x_tokens)
+            Y.append(y_tokens)
             
+            '''
             for i in range(length):
                 x = d_tokens[:-1]
                 x = x[-config.block_size:]
@@ -68,7 +68,10 @@ def get_test_loss(data, model, config):
     #loop batches of data
     transformer.train()
     loss = 0
+    total = 0
+    correct = 0
     with torch.no_grad():
+
         for idx, (X, y) in enumerate(dataloader):
             X = X.to(device_type)
             y = y.to(device_type)
@@ -82,10 +85,14 @@ def get_test_loss(data, model, config):
             logits = transformer(X, self_attention_mask=attention_mask)
             #compute loss
             loss += cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1), ignore_index= -100)
+            non_pad = y != -100
+            preds = logits.argmax(dim=-1)
+            correct += (preds[non_pad] == y[non_pad]).sum().item()
+            total += non_pad.sum().item()
 
             #if idx % 10 == 0:
             #    print(f"Loss: {loss.item():.4f}")
-    return loss.item() / len(dataloader)  # Average loss over all batches
+    return loss.item() / len(dataloader), 100 * correct/total  # Average loss over all batches
     
 if __name__ == "__main__":
     device_type = 'cuda' if torch.cuda.is_available() else 'cpu'

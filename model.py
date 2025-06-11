@@ -14,7 +14,8 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, GPT2TokenizerFast
+from char_tokenizer import CharTokenizer
 
 
 class LayerNorm(nn.Module):
@@ -130,13 +131,15 @@ class Block(nn.Module):
 @dataclass
 class GPTConfig:
     block_size: int = 5
-    vocab_size: int = 50304 # GPT-2 vocab_size of 50257, padded up to nearest multiple of 64 for efficiency
-    n_layer: int = 1
+    vocab_size: int = 50257 # GPT-2 vocab_size of 50257, padded up to nearest multiple of 64 for efficiency
+    n_layer: int = 3
     n_head: int = 4
     n_embd: int = 768
     dropout: float = 0.0
     bias: bool = True # True: bias in Linears and LayerNorms, like GPT-2. False: a bit better and faster
-    tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")  # HuggingFace GPT-2 tokenizer
+    tokenizer.pad_token = tokenizer.eos_token  # Set pad token to eos token, which is a common choice
+
     # TODO: add a tokenizer option
 
 class GPT(nn.Module):

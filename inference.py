@@ -16,7 +16,7 @@ def inference(model_weights, config, input_text=""):
 
     #read data
     d_tokens = config.tokenizer(input_text).input_ids
-    d_tokens = d_tokens[:-1]  # Remove the CLS token
+    print(d_tokens)
     pad = [0] * (config.block_size - len(d_tokens))
     d_tokens = pad + d_tokens  # Pad the input tokens
     x_tokens = torch.tensor(d_tokens, dtype = torch.long)
@@ -25,7 +25,7 @@ def inference(model_weights, config, input_text=""):
     #run inference
     pad_id = config.tokenizer.pad_token_id
     attention_mask = (x_tokens != pad_id).bool()
-    logits = transformer(x_tokens, attention_mask=attention_mask)
+    logits = transformer(x_tokens, self_attention_mask=attention_mask)
     print(logits.shape)
     predicted_token = logits.argmax(dim=-1).squeeze()
     print(f"Predicted token: {predicted_token}")
@@ -42,7 +42,7 @@ def infer(model, config, input=""):
 
     #read data
     d_tokens = config.tokenizer(input).input_ids
-    d_tokens = d_tokens[:-1]  # Remove the CLS token
+    print(d_tokens)
     pad = [0] * (config.block_size - len(d_tokens))
     d_tokens = pad + d_tokens  # Pad the input tokens
     x_tokens = torch.tensor(d_tokens, dtype = torch.long)
@@ -51,12 +51,18 @@ def infer(model, config, input=""):
     #run inference
     pad_id = config.tokenizer.pad_token_id
     attention_mask = (x_tokens != pad_id).bool()
-    logits = transformer(x_tokens, attention_mask=attention_mask)
+    logits = transformer(x_tokens, self_attention_mask=attention_mask)
     logits = logits[:, -1, :]  # Get the logits for the last token
     predicted_token = logits.argmax(dim=-1).squeeze()
-    
+
     print(f"Predicted token: {predicted_token}")
     predicted_text = config.tokenizer.decode(predicted_token)
     print(f"Input: {config.tokenizer.decode(d_tokens)}")    
     print(f"Predicted: {predicted_text}")
     return predicted_token, predicted_text
+
+config = GPTConfig()
+config.vocab_size = 50304
+config.block_size = 3
+config.n_layer = 1
+print(inference("GPT_simple_data.pth", config, "I love machine"))  # Example input
