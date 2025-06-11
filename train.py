@@ -96,7 +96,7 @@ def train(data, weight_decay, learning_rate, betas, model = None):
     test_losses = []
     train_accuracies = []
     test_accuracies = []
-    for epoch in range(1000):
+    for epoch in range(10000):
         print(f"Epoch {epoch + 1}")
         train_loss = 0
         total = 0
@@ -136,6 +136,9 @@ def train(data, weight_decay, learning_rate, betas, model = None):
                 print("Loss is low enough, stopping training")
                 end = True
                 break
+        if epoch % 500 == 0:
+            torch.save(transformer.state_dict(), f"number_model_4/number_model_4_{epoch}_grok.pth")
+        #print(f"Batch {idx} | X: {X} | y: {y}")
         train_loss /= len(train_loader)
         train_accuracy = 100 * correct / total
         train_accuracies.append(train_accuracy)
@@ -151,6 +154,7 @@ def train(data, weight_decay, learning_rate, betas, model = None):
     #save model
     #print(train_losses)
     #print(test_losses)
+    torch.save(transformer.state_dict(), "number_model_4_grok.pth")
     plot(test_losses, train_losses, range(1000))
     plot(test_accuracies, train_accuracies, range(1000))
-    torch.save(transformer.state_dict(), "number_model_4_grok.pth")
+    
