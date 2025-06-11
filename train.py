@@ -121,8 +121,8 @@ def train(data, weight_decay, learning_rate, betas, model = None):
             preds = logits.argmax(dim=-1)
             correct += (preds[non_pad] == y[non_pad]).sum().item()
             total += non_pad.sum().item()
-            print(preds[non_pad])
-            print(y[non_pad])
+            #print(preds[non_pad])
+            #print(y[non_pad])
         #call optimizer
             optimizer.zero_grad()
             loss.backward()
@@ -151,6 +151,6 @@ def train(data, weight_decay, learning_rate, betas, model = None):
     #save model
     #print(train_losses)
     #print(test_losses)
-    #plot(test_losses, train_losses, range(100))
-    #plot(test_accuracies, train_accuracies, range(100))
+    plot(test_losses, train_losses, range(1000))
+    plot(test_accuracies, train_accuracies, range(1000))
     torch.save(transformer.state_dict(), "number_model_4_grok.pth")

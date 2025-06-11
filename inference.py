@@ -65,4 +65,4 @@ config = GPTConfig()
 config.vocab_size = 50304
 config.block_size = 10
 config.n_layer = 1
-print(inference("GPT_simple_data.pth", config, ""))  # Example input
+#print(inference("GPT_simple_data.pth", config, ""))  # Example input
