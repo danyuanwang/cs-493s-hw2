@@ -5,21 +5,19 @@ from torch.utils.data import DataLoader, TensorDataset
 from torch.nn.functional import cross_entropy, relu
 from torch.optim import Adam
 from torch.nn.utils.rnn import pad_sequence
-from test_loss import get_test_loss
+from inference import infer
 
-def train(data, weight_decay, learning_rate, betas):
+def get_test_loss(data, model, config):
     
     #device management
     device_type = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     #instantiate model
-    config = GPTConfig()
-    transformer = GPT(config).to(device_type)
-    optimizer = transformer.configure_optimizers(weight_decay, learning_rate, betas, device_type)
+    transformer = model.to(device_type)
 
     #read data  
-    train_x = []
-    train_y = []
+    X = []
+    Y = []
     with open(data, "r") as f:
         d = f.readline()
         while d != "":
@@ -47,35 +45,31 @@ def train(data, weight_decay, learning_rate, betas):
                 y = d_tokens[1:]
                 y = y[-config.block_size:]
 
-                print(f"X: {x} | Y: {y}")
+                #print(f"X: {x} | Y: {y}")
                 x_tokens = torch.tensor(x, dtype = torch.long)
                 y_tokens = torch.tensor(y, dtype = torch.long)
-                train_x.append(x_tokens)
-                train_y.append(y_tokens)
+                X.append(x_tokens)
+                Y.append(y_tokens)
                 d_tokens = d_tokens[:-1] 
             
             d = f.readline()
 
     # pad sequences to max length
     pad_id = config.tokenizer.pad_token_id
-    train_x = pad_sequence(train_x, batch_first=True, padding_value=pad_id)
-    train_y = pad_sequence(train_y, batch_first=True, padding_value=-100)
+    X = pad_sequence(Y, batch_first=True, padding_value=pad_id)
+    Y = pad_sequence(Y, batch_first=True, padding_value=-100)
 
 
 
-    train_set = TensorDataset(train_x, train_y)
-    train_loader = DataLoader(train_set, batch_size = 32, shuffle= True)
+    dataset = TensorDataset(X, Y)
+    dataloader = DataLoader(dataset, batch_size = 32, shuffle= True)
 
    
     #loop batches of data
     transformer.train()
-    end = False
-    train_losses = []
-    test_losses = []
-    for epoch in range(5):
-        print(f"Epoch {epoch + 1}")
-        train_loss = 0
-        for idx, (X, y) in enumerate(train_loader):
+    loss = 0
+    with torch.no_grad():
+        for idx, (X, y) in enumerate(dataloader):
             X = X.to(device_type)
             y = y.to(device_type)
             #print(f"Batch {idx} | X shape: {X.shape} | y shape: {y.shape}")
@@ -84,32 +78,18 @@ def train(data, weight_decay, learning_rate, betas):
             attention_mask = (X != pad_id).bool()  # Create attention mask where pad_id is 0 and others are 1
             #print(attention_mask)
 
-        #run forward pass on batch
+            #run forward pass on batch
             logits = transformer(X, self_attention_mask=attention_mask)
-        #compute loss
-            loss = cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1), ignore_index= -100)
-            train_loss += loss.item()
-        #call optimizer
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            #compute loss
+            loss += cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1), ignore_index= -100)
 
-
-            if idx % 10 == 0:
-                print(f"Loss: {loss.item():.4f}")
-            if(loss.item() < 0.0001):
-                print("Loss is low enough, stopping training")
-                end = True
-                break
-        train_loss /= len(train_loader)
-        train_losses.append(train_loss)
-        test_loss = get_test_loss( "test.txt", transformer, config)
-        test_losses.append(test_loss)
-        print(train_losses)
-        print(test_losses)
-        if end:
-            break
-    #save model
-    print(train_losses)
-    print(test_losses)
-    torch.save(transformer.state_dict(), "number_model_1_layer_1.pth")
+            #if idx % 10 == 0:
+            #    print(f"Loss: {loss.item():.4f}")
+    return loss.item() / len(dataloader)  # Average loss over all batches
+    
+if __name__ == "__main__":
+    device_type = 'cuda' if torch.cuda.is_available() else 'cpu'
+    config = GPTConfig()
+    transformer = GPT(config).to(device_type)
+    transformer.load_state_dict(torch.load("number_model_1_layer_1.pth", weights_only= True, map_location=device_type))
+    loss = get_test_loss("test.txt", transformer, config)
