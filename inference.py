@@ -18,7 +18,7 @@ def inference(model_weights, config, input_text=""):
     d_tokens = config.tokenizer(input_text).input_ids
     print(d_tokens)
     pad = [0] * (config.block_size - len(d_tokens))
-    d_tokens = pad + d_tokens  # Pad the input tokens
+    d_tokens = d_tokens + pad # Pad the input tokens
     x_tokens = torch.tensor(d_tokens, dtype = torch.long)
     x_tokens = torch.tensor(x_tokens).unsqueeze(0)  # Add batch dimension
 
@@ -44,7 +44,7 @@ def infer(model, config, input=""):
     d_tokens = config.tokenizer(input).input_ids
     print(d_tokens)
     pad = [0] * (config.block_size - len(d_tokens))
-    d_tokens = pad + d_tokens  # Pad the input tokens
+    d_tokens = d_tokens + pad  # Pad the input tokens
     x_tokens = torch.tensor(d_tokens, dtype = torch.long)
     x_tokens = torch.tensor(x_tokens).unsqueeze(0)  # Add batch dimension
 
@@ -63,6 +63,6 @@ def infer(model, config, input=""):
 
 config = GPTConfig()
 config.vocab_size = 50304
-config.block_size = 3
+config.block_size = 10
 config.n_layer = 1
-print(inference("GPT_simple_data.pth", config, "I love machine"))  # Example input
+print(inference("GPT_simple_data.pth", config, ""))  # Example input

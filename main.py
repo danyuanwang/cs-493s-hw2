@@ -7,7 +7,7 @@ def main():
     #config = GPTConfig()
     #transformer = GPT(config).to(device_type)
     #transformer.load_state_dict(torch.load("number_model_3_layer_small.pth", weights_only= True, map_location=device_type))
-    train("simple_data.txt", 0.9, 0.01, [0.9, 0.9], model=None)  # Example training call with the loaded model
+    train("simple_data.txt", 0.9, 0.001, [0.9, 0.98], model=None)  # Example training call with the loaded model
 
 
 main()  

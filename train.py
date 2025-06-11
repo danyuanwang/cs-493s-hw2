@@ -27,7 +27,7 @@ def train(data, weight_decay, learning_rate, betas, model = None):
     if model is None:
         config = GPTConfig()
         config.vocab_size = 50304
-        config.block_size = 3
+        config.block_size = 10
         config.n_layer = 1
         transformer = GPT(config).to(device_type)
         optimizer = transformer.configure_optimizers(weight_decay, learning_rate, betas, device_type)
@@ -86,7 +86,7 @@ def train(data, weight_decay, learning_rate, betas, model = None):
 
 
     train_set = TensorDataset(train_x, train_y)
-    train_loader = DataLoader(train_set, batch_size = 32, shuffle= True)
+    train_loader = DataLoader(train_set, batch_size = 100, shuffle= True)
 
    
     #loop batches of data
@@ -153,4 +153,4 @@ def train(data, weight_decay, learning_rate, betas, model = None):
     #print(test_losses)
     #plot(test_losses, train_losses, range(100))
     #plot(test_accuracies, train_accuracies, range(100))
-    torch.save(transformer.state_dict(), "GPT_simple_data.pth")
+    torch.save(transformer.state_dict(), "number_model_4_grok.pth")
