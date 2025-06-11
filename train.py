@@ -72,7 +72,7 @@ def train(data, weight_decay, learning_rate, betas):
     end = False
     train_losses = []
     test_losses = []
-    for epoch in range(5):
+    for epoch in range(50):
         print(f"Epoch {epoch + 1}")
         train_loss = 0
         for idx, (X, y) in enumerate(train_loader):
