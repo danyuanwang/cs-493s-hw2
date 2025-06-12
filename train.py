@@ -26,9 +26,6 @@ def train(data, weight_decay, learning_rate, betas, model = None):
     #instantiate model
     if model is None:
         config = GPTConfig()
-        config.vocab_size = 50304
-        config.block_size = 10
-        config.n_layer = 1
         transformer = GPT(config).to(device_type)
         optimizer = transformer.configure_optimizers(weight_decay, learning_rate, betas, device_type)
     else:
@@ -86,7 +83,7 @@ def train(data, weight_decay, learning_rate, betas, model = None):
 
 
     train_set = TensorDataset(train_x, train_y)
-    train_loader = DataLoader(train_set, batch_size = 100, shuffle= True)
+    train_loader = DataLoader(train_set, batch_size = 25, shuffle= True)
 
    
     #loop batches of data
@@ -96,7 +93,7 @@ def train(data, weight_decay, learning_rate, betas, model = None):
     test_losses = []
     train_accuracies = []
     test_accuracies = []
-    for epoch in range(10000):
+    for epoch in range(3000):
         print(f"Epoch {epoch + 1}")
         train_loss = 0
         total = 0
@@ -132,12 +129,10 @@ def train(data, weight_decay, learning_rate, betas, model = None):
             if idx % 10 == 0:
                 print(f"Loss: {loss.item():.4f}")
                 print(f"Accuracy: {100 * correct / total:.4f}%")
-            if(loss.item() < 0.0001):
-                print("Loss is low enough, stopping training")
-                end = True
-                break
-        if epoch % 500 == 0:
-            torch.save(transformer.state_dict(), f"number_model_4/number_model_4_{epoch}_grok.pth")
+
+        if epoch % 100 == 0:
+            print(f"Saving model at epoch {epoch}")
+            torch.save(transformer.state_dict(), f"number_model_4_addition/number_model_4_addition_{epoch}_grok.pth")
         #print(f"Batch {idx} | X: {X} | y: {y}")
         train_loss /= len(train_loader)
         train_accuracy = 100 * correct / total
@@ -148,13 +143,16 @@ def train(data, weight_decay, learning_rate, betas, model = None):
         test_losses.append(test_loss)
         print(f"Train Loss: {train_loss:.4f} | Train Accuracy: {train_accuracy:.2f}%")
         print(f"Test Loss: {test_loss:.4f} | Test Accuracy: {test_accuracy:.2f}%")
-        if end:
-            break
+        if(test_loss < 0.0001):
+                print("Loss is low enough, stopping training")
+                end = True
+                break
+
 
     #save model
     #print(train_losses)
     #print(test_losses)
     torch.save(transformer.state_dict(), "number_model_4_grok.pth")
-    plot(test_losses, train_losses, range(1000))
-    plot(test_accuracies, train_accuracies, range(1000))
+    plot(test_losses, train_losses, range(10000))
+    plot(test_accuracies, train_accuracies, range(10000))
     

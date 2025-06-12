@@ -61,8 +61,18 @@ def infer(model, config, input=""):
     print(f"Predicted: {predicted_text}")
     return predicted_token, predicted_text
 
-config = GPTConfig()
-config.vocab_size = 50304
-config.block_size = 10
-config.n_layer = 1
-#print(inference("GPT_simple_data.pth", config, ""))  # Example input
+if __name__ == "__main__":
+    config = GPTConfig()
+    #config.vocab_size = 50304s
+    #config.block_size = 10
+    #config.n_layer = 1
+    with open("test.txt", "r") as f:
+
+        lines = f.readlines()
+        for line in lines:
+            if line:
+                line = line.replace('\n', '')
+                d_tokens = config.tokenizer(line).input_ids
+                d_tokens = d_tokens[:-1]
+                text = config.tokenizer.decode(d_tokens)
+                print(inference("number_model_4_addition/number_model_4_addition_2900_grok.pth", config, text))  # Example input

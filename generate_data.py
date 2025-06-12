@@ -23,7 +23,7 @@ def generate_data(p, data_size, splits = (0.8, 0.1, 0.1)):
             val_out = val_out + str(a) + " + " + str(b) + " = " + str(c) + "\n"
         #print(split)
     
-    for i in range(data_size):
+    for i in range(0):
         a = random.randint(0, p)
         b = random.randint(0, a)
         c = np.abs(a - b) % p
@@ -36,7 +36,7 @@ def generate_data(p, data_size, splits = (0.8, 0.1, 0.1)):
             val_out = val_out + str(a) + " - " + str(b) + " = " + str(c) + "\n"
 
 
-    for i in range(data_size):
+    for i in range(0):
         a = random.randint(0, p)
         b = random.randint(1, p-1) #b should not be 0 to avoid division by zero
         print(a, b)
@@ -57,4 +57,4 @@ def generate_data(p, data_size, splits = (0.8, 0.1, 0.1)):
     with open("val.txt", "w") as f:
         f.write(val_out)
 
-generate_data(97, 100, [0.8, 0.1, 0.1])
+generate_data(97, 100, [0.5, 0.25, 0.25])

@@ -29,7 +29,7 @@ def get_test_loss(data, model, config):
             if length < 3:
                 d = f.readline()
                 continue
-            '''
+            
             x = d_tokens[:-1]
             y = d_tokens[1:]
             #print(f"X: {x} | Y: {y}")
@@ -51,12 +51,12 @@ def get_test_loss(data, model, config):
                 X.append(x_tokens)
                 Y.append(y_tokens)
                 d_tokens = d_tokens[:-1] 
-            
+            '''
             d = f.readline()
 
     # pad sequences to max length
     pad_id = config.tokenizer.pad_token_id
-    X = pad_sequence(Y, batch_first=True, padding_value=pad_id)
+    X = pad_sequence(X, batch_first=True, padding_value=pad_id)
     Y = pad_sequence(Y, batch_first=True, padding_value=-100)
 
 
@@ -66,7 +66,6 @@ def get_test_loss(data, model, config):
 
    
     #loop batches of data
-    transformer.train()
     loss = 0
     total = 0
     correct = 0

@@ -132,7 +132,7 @@ class Block(nn.Module):
 class GPTConfig:
     block_size: int = 5
     vocab_size: int = 50257 # GPT-2 vocab_size of 50257, padded up to nearest multiple of 64 for efficiency
-    n_layer: int = 4
+    n_layer: int = 2
     n_head: int = 4
     n_embd: int = 768
     dropout: float = 0.0
