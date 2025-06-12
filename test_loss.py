@@ -62,7 +62,7 @@ def get_test_loss(data, model, config):
 
 
     dataset = TensorDataset(X, Y)
-    dataloader = DataLoader(dataset, batch_size = 32, shuffle= True)
+    dataloader = DataLoader(dataset, batch_size = 512, shuffle= True)
 
    
     #loop batches of data
